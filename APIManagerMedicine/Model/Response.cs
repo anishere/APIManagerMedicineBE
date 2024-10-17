@@ -14,6 +14,10 @@ namespace APIManagerMedicine.Model
 
         public List<DanhMuc> ListCategories { get; set; }
 
+        public List<NhanVien> ListNhanVien { get; set; }
+
+        public List<KhachHang> ListKhachHang { get; set; }
+
         // tới login
     }
 }
