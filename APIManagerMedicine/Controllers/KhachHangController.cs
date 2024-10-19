@@ -99,7 +99,44 @@ namespace APIManagerMedicine.Controllers
             }
         }
 
-        // Thêm khách hàng
+        [HttpGet("GetKhachHangByID/{id}")]
+        public ActionResult<Response> GetKhachHangByID(string id)
+        {
+            Response response = new Response();
+            SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("ManagerMedicineDB").ToString());
+            SqlDataAdapter da = new SqlDataAdapter("SELECT * FROM khachhang WHERE MaKH = @id", connection);
+            da.SelectCommand.Parameters.AddWithValue("@id", id);
+
+            DataTable dt = new DataTable();
+            da.Fill(dt);
+
+            if (dt.Rows.Count > 0)
+            {
+                DataRow row = dt.Rows[0];
+                KhachHang kh = new KhachHang
+                {
+                    MaKH = Convert.ToString(row["MaKH"]),
+                    TenKH = Convert.ToString(row["TenKH"]),
+                    SDT = Convert.ToString(row["SDT"]),
+                    GT = Convert.ToString(row["GT"]),
+                    MaCN = Convert.ToString(row["MaCN"]),
+                    RowGuid = Guid.Parse(Convert.ToString(row["rowguid"]))
+                };
+
+                response.StatusCode = 200;
+                response.StatusMessage = "Success";
+                response.ListKhachHang = new List<KhachHang> { kh };
+
+                return Ok(response);
+            }
+            else
+            {
+                response.StatusCode = 404;
+                response.StatusMessage = "Customer not found.";
+                return NotFound(response);
+            }
+        }
+
         // Thêm khách hàng
         [HttpPost("AddKhachHang")]
         public ActionResult<Response> AddKhachHang([FromBody] KhachHang newKhachHang)

@@ -18,6 +18,10 @@ namespace APIManagerMedicine.Model
 
         public List<KhachHang> ListKhachHang { get; set; }
 
+        public List<HoaDon> ListHoaDon { get; set; }
+
+        public List<ThuocTrongHD> ListThuocTrongHD { get; set; }
+
         // tới login
     }
 }
