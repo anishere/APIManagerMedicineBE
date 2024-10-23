@@ -7,6 +7,7 @@ namespace APIManagerMedicine.Model
         public int StatusCode { get; set; }
 
         public string? StatusMessage { get; set; }
+        public string? MaHD { get; set; }
 
         public List<Medicine>? ListMedicine {  get; set; } 
 

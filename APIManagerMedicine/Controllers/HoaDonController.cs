@@ -109,13 +109,12 @@ namespace APIManagerMedicine.Controllers
             try
             {
                 connection.Open();
-
-                // Tạo MaHD tự động bằng cách sử dụng GUID
+                // Tạo MaHD tự động nếu chưa có
                 newHoaDon.MaHD = Guid.NewGuid().ToString();
 
                 SqlCommand cmd = new SqlCommand(
                     @"INSERT INTO hoadon (MaHD, MaNV, MaKH, NgayBan, TongGia, MaCN) 
-                    VALUES (@MaHD, @MaNV, @MaKH, @NgayBan, @TongGia, @MaCN)", connection);
+            VALUES (@MaHD, @MaNV, @MaKH, @NgayBan, @TongGia, @MaCN)", connection);
 
                 cmd.Parameters.AddWithValue("@MaHD", newHoaDon.MaHD);
                 cmd.Parameters.AddWithValue("@MaNV", newHoaDon.MaNV ?? (object)DBNull.Value);
@@ -129,6 +128,7 @@ namespace APIManagerMedicine.Controllers
                 {
                     response.StatusCode = 201; // 201 Created
                     response.StatusMessage = "Invoice added successfully.";
+                    response.MaHD = newHoaDon.MaHD; // Trả về MaHD
                     return CreatedAtAction(nameof(GetHoaDonByMaHD), new { maHD = newHoaDon.MaHD }, response);
                 }
                 else
