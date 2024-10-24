@@ -20,16 +20,13 @@ namespace APIManagerMedicine.Controllers
 
         [HttpGet]
         [Route("ListUser")]
-        public ActionResult<Response> GetUsersByPage(int page = 1, int pageSize = 20)
+        public ActionResult<Response> GetAllUsers()
         {
             List<Account> lstUsers = new List<Account>();
             SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("ManagerMedicineDB").ToString());
 
-            int startIndex = (page - 1) * pageSize;
-
-            SqlDataAdapter da = new SqlDataAdapter("SELECT * FROM Account ORDER BY UserID OFFSET @StartIndex ROWS FETCH NEXT @PageSize ROWS ONLY", connection);
-            da.SelectCommand.Parameters.AddWithValue("@StartIndex", startIndex);
-            da.SelectCommand.Parameters.AddWithValue("@PageSize", pageSize);
+            // Thực hiện truy vấn lấy tất cả người dùng
+            SqlDataAdapter da = new SqlDataAdapter("SELECT * FROM Account ORDER BY UserID", connection);
 
             DataTable dt = new DataTable();
             da.Fill(dt);

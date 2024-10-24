@@ -20,16 +20,13 @@ namespace APIManagerMedicine.Controllers
 
         [HttpGet]
         [Route("ListMedicine")]
-        public Response GetProductsByPage(int page = 1, int pageSize = 20)
+        public Response GetAllMedicines()
         {
             List<Medicine> lstmedicines = new List<Medicine>();
             using (SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("ManagerMedicineDB").ToString()))
             {
-                int startIndex = (page - 1) * pageSize;
-
-                SqlDataAdapter da = new SqlDataAdapter("SELECT * FROM thuoc ORDER BY MaThuoc OFFSET @StartIndex ROWS FETCH NEXT @PageSize ROWS ONLY", connection);
-                da.SelectCommand.Parameters.AddWithValue("@StartIndex", startIndex);
-                da.SelectCommand.Parameters.AddWithValue("@PageSize", pageSize);
+                // Thực hiện truy vấn lấy tất cả thuốc
+                SqlDataAdapter da = new SqlDataAdapter("SELECT * FROM thuoc ORDER BY MaThuoc", connection);
 
                 DataTable dt = new DataTable();
                 da.Fill(dt);
