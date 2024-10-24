@@ -105,5 +105,46 @@ namespace APIManagerMedicine.Controllers
                 connection.Close();
             }
         }
+
+        // Xóa tất cả các thuốc trong hóa đơn theo MaHD
+        [HttpDelete("DeleteAllThuocTrongHD/{maHD}")]
+        public ActionResult<Response> DeleteAllThuocTrongHDByMaHD(string maHD)
+        {
+            Response response = new Response();
+            SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("ManagerMedicineDB").ToString());
+
+            try
+            {
+                connection.Open();
+
+                SqlCommand cmd = new SqlCommand("DELETE FROM thuoc_trong_hoa_don WHERE MaHD = @MaHD", connection);
+                cmd.Parameters.AddWithValue("@MaHD", maHD);
+
+                int rowsAffected = cmd.ExecuteNonQuery();
+
+                if (rowsAffected > 0)
+                {
+                    response.StatusCode = 200;
+                    response.StatusMessage = "All medicines in the invoice have been successfully deleted.";
+                    return Ok(response);
+                }
+                else
+                {
+                    response.StatusCode = 404;
+                    response.StatusMessage = "No medicines found for this invoice.";
+                    return NotFound(response);
+                }
+            }
+            catch (Exception ex)
+            {
+                response.StatusCode = 500;
+                response.StatusMessage = $"Internal server error: {ex.Message}";
+                return StatusCode(500, response);
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
     }
 }
