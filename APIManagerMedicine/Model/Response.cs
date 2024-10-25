@@ -23,6 +23,9 @@ namespace APIManagerMedicine.Model
 
         public List<ThuocTrongHD> ListThuocTrongHD { get; set; }
 
-        // tới login
+        // Các thuộc tính cho thống kê doanh thu
+        public decimal TotalRevenue { get; set; }
+        public decimal BranchRevenue { get; set; }
+        public decimal BranchPercentage { get; set; }
     }
 }

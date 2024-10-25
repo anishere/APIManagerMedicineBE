@@ -237,5 +237,50 @@ namespace APIManagerMedicine.Controllers
                 connection.Close();
             }
         }
+
+        // Thống kê doanh thu của tất cả chi nhánh và chi nhánh hiện tại
+        [HttpGet("RevenueStatistics/{branchId}")]
+        public ActionResult<Response> GetRevenueStatistics(string branchId)
+        {
+            Response response = new Response();
+            SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("ManagerMedicineDB").ToString());
+
+            try
+            {
+                connection.Open();
+
+                // Lấy tổng doanh thu của tất cả các chi nhánh từ linked server
+                SqlCommand totalRevenueCmd = new SqlCommand("SELECT SUM(TongGia) AS TotalRevenue FROM linksvqlthuoc.QLThuoc.dbo.hoadon", connection);
+                decimal totalRevenue = (decimal)(totalRevenueCmd.ExecuteScalar() ?? 0);
+
+                // Lấy doanh thu của chi nhánh hiện tại dựa trên branchId
+                SqlCommand branchRevenueCmd = new SqlCommand("SELECT SUM(TongGia) AS BranchRevenue FROM hoadon WHERE MaCN = @BranchId", connection);
+                branchRevenueCmd.Parameters.AddWithValue("@BranchId", branchId);
+                decimal branchRevenue = (decimal)(branchRevenueCmd.ExecuteScalar() ?? 0);
+
+                // Tính phần trăm doanh thu của chi nhánh hiện tại
+                decimal branchPercentage = totalRevenue > 0 ? (branchRevenue * 100.0m / totalRevenue) : 0;
+
+                // Đưa dữ liệu vào response
+                response.StatusCode = 200;
+                response.StatusMessage = "Success";
+                response.TotalRevenue = totalRevenue;
+                response.BranchRevenue = branchRevenue;
+                response.BranchPercentage = branchPercentage;
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                response.StatusCode = 500;
+                response.StatusMessage = $"Internal server error: {ex.Message}";
+                return StatusCode(500, response);
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
+
     }
 }
