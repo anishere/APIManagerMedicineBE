@@ -23,6 +23,8 @@ namespace APIManagerMedicine.Model
 
         public List<ThuocTrongHD> ListThuocTrongHD { get; set; }
 
+        public List<CungCap> ListCungCap { get; set; }
+
         // Các thuộc tính cho thống kê doanh thu
         public decimal TotalRevenue { get; set; }
         public decimal BranchRevenue { get; set; }
