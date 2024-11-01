@@ -351,5 +351,133 @@ namespace APIManagerMedicine.Controllers
             }
         }
 
+        [HttpPut]
+        [Route("UpdateAccount")]
+        public ActionResult<Response> UpdateAccount(int userID, [FromBody] Account updatedAccount)
+        {
+            SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("ManagerMedicineDB").ToString());
+            Response response = new Response();
+
+            try
+            {
+                connection.Open();
+
+                // Kiểm tra xem User có tồn tại không
+                SqlCommand checkCmd = new SqlCommand("SELECT COUNT(1) FROM [Account] WHERE UserID = @UserID", connection);
+                checkCmd.Parameters.AddWithValue("@UserID", userID);
+                int userCount = (int)checkCmd.ExecuteScalar();
+
+                if (userCount == 0)
+                {
+                    response.StatusCode = 404; // Not Found
+                    response.StatusMessage = "User not found";
+                    return response;
+                }
+
+                // Cập nhật thông tin tài khoản
+                SqlCommand updateCmd = new SqlCommand(
+                    "UPDATE [Account] SET " +
+                    "UserName = @UserName, Password = @Password, Avatar = @Avatar, UserType = @UserType, " +
+                    "ActiveStatus = @ActiveStatus, VisibleFunction = @VisibleFunction, StartTime = @StartTime, " +
+                    "EndTime = @EndTime, WorkDayofWeek = @WorkDayofWeek, ActivationDate = @ActivationDate, " +
+                    "DeactivationDate = @DeactivationDate, WorkShedule = @WorkShedule, ActiveShedule = @ActiveShedule, " +
+                    "MaNV = @MaNV, MaCN = @MaCN " +
+                    "WHERE UserID = @UserID", connection);
+
+                updateCmd.Parameters.AddWithValue("@UserID", userID);
+                updateCmd.Parameters.AddWithValue("@UserName", updatedAccount.UserName ?? (object)DBNull.Value);
+                updateCmd.Parameters.AddWithValue("@Password", updatedAccount.Password ?? (object)DBNull.Value);
+                updateCmd.Parameters.AddWithValue("@Avatar", updatedAccount.Avatar ?? (object)DBNull.Value);
+                updateCmd.Parameters.AddWithValue("@UserType", updatedAccount.UserType ?? (object)DBNull.Value);
+                updateCmd.Parameters.AddWithValue("@ActiveStatus", updatedAccount.ActiveStatus);
+                updateCmd.Parameters.AddWithValue("@VisibleFunction", updatedAccount.VisibleFunction ?? (object)DBNull.Value);
+                updateCmd.Parameters.AddWithValue("@StartTime", updatedAccount.StartTime.HasValue ? (object)updatedAccount.StartTime.Value : DBNull.Value);
+                updateCmd.Parameters.AddWithValue("@EndTime", updatedAccount.EndTime.HasValue ? (object)updatedAccount.EndTime.Value : DBNull.Value);
+                updateCmd.Parameters.AddWithValue("@WorkDayofWeek", updatedAccount.WorkDayofWeek ?? (object)DBNull.Value);
+                updateCmd.Parameters.AddWithValue("@ActivationDate", updatedAccount.ActivationDate);
+                updateCmd.Parameters.AddWithValue("@DeactivationDate", updatedAccount.DeactivationDate);
+                updateCmd.Parameters.AddWithValue("@WorkShedule", updatedAccount.WorkShedule);
+                updateCmd.Parameters.AddWithValue("@ActiveShedule", updatedAccount.ActiveShedule);
+                updateCmd.Parameters.AddWithValue("@MaNV", updatedAccount.MaNV ?? (object)DBNull.Value);
+                updateCmd.Parameters.AddWithValue("@MaCN", updatedAccount.MaCN ?? (object)DBNull.Value);
+
+                int rowsAffected = updateCmd.ExecuteNonQuery();
+
+                if (rowsAffected > 0)
+                {
+                    response.StatusCode = 200; // OK
+                    response.StatusMessage = "Account updated successfully";
+                }
+                else
+                {
+                    response.StatusCode = 500; // Internal Server Error
+                    response.StatusMessage = "Failed to update account";
+                }
+            }
+            catch (Exception ex)
+            {
+                response.StatusCode = 500;
+                response.StatusMessage = $"Internal server error: {ex.Message}";
+            }
+            finally
+            {
+                connection.Close();
+            }
+
+            return response;
+        }
+
+        [HttpDelete]
+        [Route("DeleteUser")]
+        public ActionResult<Response> DeleteUser(int userID)
+        {
+            SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("ManagerMedicineDB").ToString());
+            Response response = new Response();
+
+            try
+            {
+                connection.Open();
+
+                // Kiểm tra xem User có tồn tại không
+                SqlCommand checkCmd = new SqlCommand("SELECT COUNT(1) FROM [Account] WHERE UserID = @UserID", connection);
+                checkCmd.Parameters.AddWithValue("@UserID", userID);
+                int userCount = (int)checkCmd.ExecuteScalar();
+
+                if (userCount == 0)
+                {
+                    response.StatusCode = 404; // Not Found
+                    response.StatusMessage = "User not found";
+                    return response;
+                }
+
+                // Thực hiện xóa User
+                SqlCommand deleteCmd = new SqlCommand("DELETE FROM [Account] WHERE UserID = @UserID", connection);
+                deleteCmd.Parameters.AddWithValue("@UserID", userID);
+                int rowsAffected = deleteCmd.ExecuteNonQuery();
+
+                if (rowsAffected > 0)
+                {
+                    response.StatusCode = 200; // OK
+                    response.StatusMessage = "User deleted successfully";
+                }
+                else
+                {
+                    response.StatusCode = 500; // Internal Server Error
+                    response.StatusMessage = "Failed to delete user";
+                }
+            }
+            catch (Exception ex)
+            {
+                response.StatusCode = 500; // Internal Server Error
+                response.StatusMessage = $"Internal server error: {ex.Message}";
+            }
+            finally
+            {
+                connection.Close();
+            }
+
+            return response;
+        }
+
     }
 }
