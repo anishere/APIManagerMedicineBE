@@ -279,8 +279,31 @@ namespace APIManagerMedicine.Controllers
         {
             using (SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("ManagerMedicineDB").ToString()))
             {
-                string query = "DELETE FROM thuoc WHERE MaThuoc = @MaThuoc";
+                // Bước 1: Lấy thông tin hình ảnh từ thuốc
+                SqlDataAdapter da = new SqlDataAdapter("SELECT HinhAnh FROM thuoc WHERE MaThuoc = @MaThuoc", connection);
+                da.SelectCommand.Parameters.AddWithValue("@MaThuoc", id);
 
+                DataTable dt = new DataTable();
+                da.Fill(dt);
+
+                if (dt.Rows.Count == 0)
+                {
+                    return NotFound(new { message = "Medicine not found" });
+                }
+
+                // Bước 2: Xóa hình ảnh nếu tồn tại
+                string imagePath = Convert.ToString(dt.Rows[0]["HinhAnh"]);
+                if (!string.IsNullOrEmpty(imagePath))
+                {
+                    var fullImagePath = Path.Combine("D:", "QLThuoc", "QLThuocApp", "public", "imgStore", Path.GetFileName(imagePath));
+                    if (System.IO.File.Exists(fullImagePath))
+                    {
+                        System.IO.File.Delete(fullImagePath);
+                    }
+                }
+
+                // Bước 3: Xóa thuốc từ cơ sở dữ liệu
+                string query = "DELETE FROM thuoc WHERE MaThuoc = @MaThuoc";
                 SqlCommand command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@MaThuoc", id);
 
@@ -292,7 +315,7 @@ namespace APIManagerMedicine.Controllers
                 if (rowsAffected > 0)
                 {
                     response.StatusCode = 200;
-                    response.StatusMessage = "Medicine deleted successfully";
+                    response.StatusMessage = "Medicine and associated image deleted successfully";
                 }
                 else
                 {
