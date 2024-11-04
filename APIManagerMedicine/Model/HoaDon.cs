@@ -12,6 +12,10 @@
 
         public decimal? TongGia { get; set; }
 
+        public decimal? GiaTruocGiam { get; set; }
+
+        public int? GiamGia { get; set; }
+
         public string? MaCN { get; set; }
     }
 }

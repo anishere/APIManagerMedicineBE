@@ -41,7 +41,9 @@ namespace APIManagerMedicine.Controllers
                         MaKH = Convert.ToString(dt.Rows[i]["MaKH"]),
                         NgayBan = Convert.ToDateTime(dt.Rows[i]["NgayBan"]),
                         TongGia = Convert.ToDecimal(dt.Rows[i]["TongGia"]),
-                        MaCN = Convert.ToString(dt.Rows[i]["MaCN"])
+                        MaCN = Convert.ToString(dt.Rows[i]["MaCN"]),
+                        GiaTruocGiam = Convert.ToDecimal(dt.Rows[i]["GiaTruocGiam"]), // NEW
+                        GiamGia = Convert.ToInt32(dt.Rows[i]["GiamGia"])             // NEW
                     };
                     lstHoaDon.Add(hd);
                 }
@@ -82,7 +84,9 @@ namespace APIManagerMedicine.Controllers
                     MaKH = Convert.ToString(row["MaKH"]),
                     NgayBan = Convert.ToDateTime(row["NgayBan"]),
                     TongGia = Convert.ToDecimal(row["TongGia"]),
-                    MaCN = Convert.ToString(row["MaCN"])
+                    MaCN = Convert.ToString(row["MaCN"]),
+                    GiaTruocGiam = Convert.ToDecimal(row["GiaTruocGiam"]), // NEW
+                    GiamGia = Convert.ToInt32(row["GiamGia"])             // NEW
                 };
 
                 response.StatusCode = 200;
@@ -109,12 +113,11 @@ namespace APIManagerMedicine.Controllers
             try
             {
                 connection.Open();
-                // Tạo MaHD tự động nếu chưa có
                 newHoaDon.MaHD = Guid.NewGuid().ToString();
 
                 SqlCommand cmd = new SqlCommand(
-                    @"INSERT INTO hoadon (MaHD, MaNV, MaKH, NgayBan, TongGia, MaCN) 
-            VALUES (@MaHD, @MaNV, @MaKH, @NgayBan, @TongGia, @MaCN)", connection);
+                    @"INSERT INTO hoadon (MaHD, MaNV, MaKH, NgayBan, TongGia, MaCN, GiaTruocGiam, GiamGia) 
+                      VALUES (@MaHD, @MaNV, @MaKH, @NgayBan, @TongGia, @MaCN, @GiaTruocGiam, @GiamGia)", connection);
 
                 cmd.Parameters.AddWithValue("@MaHD", newHoaDon.MaHD);
                 cmd.Parameters.AddWithValue("@MaNV", newHoaDon.MaNV ?? (object)DBNull.Value);
@@ -122,13 +125,15 @@ namespace APIManagerMedicine.Controllers
                 cmd.Parameters.AddWithValue("@NgayBan", newHoaDon.NgayBan ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@TongGia", newHoaDon.TongGia ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@MaCN", newHoaDon.MaCN ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@GiaTruocGiam", newHoaDon.GiaTruocGiam ?? (object)DBNull.Value); // NEW
+                cmd.Parameters.AddWithValue("@GiamGia", newHoaDon.GiamGia);                                    // NEW
 
                 int rowsAffected = cmd.ExecuteNonQuery();
                 if (rowsAffected > 0)
                 {
-                    response.StatusCode = 201; // 201 Created
+                    response.StatusCode = 201;
                     response.StatusMessage = "Invoice added successfully.";
-                    response.MaHD = newHoaDon.MaHD; // Trả về MaHD
+                    response.MaHD = newHoaDon.MaHD;
                     return CreatedAtAction(nameof(GetHoaDonByMaHD), new { maHD = newHoaDon.MaHD }, response);
                 }
                 else
@@ -163,7 +168,8 @@ namespace APIManagerMedicine.Controllers
 
                 SqlCommand cmd = new SqlCommand(
                     @"UPDATE hoadon 
-                      SET MaNV = @MaNV, MaKH = @MaKH, NgayBan = @NgayBan, TongGia = @TongGia, MaCN = @MaCN 
+                      SET MaNV = @MaNV, MaKH = @MaKH, NgayBan = @NgayBan, TongGia = @TongGia, MaCN = @MaCN, 
+                          GiaTruocGiam = @GiaTruocGiam, GiamGia = @GiamGia 
                       WHERE MaHD = @MaHD", connection);
 
                 cmd.Parameters.AddWithValue("@MaHD", maHD);
@@ -172,6 +178,8 @@ namespace APIManagerMedicine.Controllers
                 cmd.Parameters.AddWithValue("@NgayBan", updatedHoaDon.NgayBan ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@TongGia", updatedHoaDon.TongGia ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@MaCN", updatedHoaDon.MaCN ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@GiaTruocGiam", updatedHoaDon.GiaTruocGiam ?? (object)DBNull.Value); // NEW
+                cmd.Parameters.AddWithValue("@GiamGia", updatedHoaDon.GiamGia);                                    // NEW
 
                 int rowsAffected = cmd.ExecuteNonQuery();
                 if (rowsAffected > 0)
@@ -249,19 +257,15 @@ namespace APIManagerMedicine.Controllers
             {
                 connection.Open();
 
-                // Lấy tổng doanh thu của tất cả các chi nhánh từ linked server
                 SqlCommand totalRevenueCmd = new SqlCommand("SELECT SUM(TongGia) AS TotalRevenue FROM linksvqlthuoc.QLThuoc.dbo.hoadon", connection);
                 decimal totalRevenue = (decimal)(totalRevenueCmd.ExecuteScalar() ?? 0);
 
-                // Lấy doanh thu của chi nhánh hiện tại dựa trên branchId
                 SqlCommand branchRevenueCmd = new SqlCommand("SELECT SUM(TongGia) AS BranchRevenue FROM hoadon WHERE MaCN = @BranchId", connection);
                 branchRevenueCmd.Parameters.AddWithValue("@BranchId", branchId);
                 decimal branchRevenue = (decimal)(branchRevenueCmd.ExecuteScalar() ?? 0);
 
-                // Tính phần trăm doanh thu của chi nhánh hiện tại
                 decimal branchPercentage = totalRevenue > 0 ? (branchRevenue * 100.0m / totalRevenue) : 0;
 
-                // Đưa dữ liệu vào response
                 response.StatusCode = 200;
                 response.StatusMessage = "Success";
                 response.TotalRevenue = totalRevenue;
@@ -281,6 +285,5 @@ namespace APIManagerMedicine.Controllers
                 connection.Close();
             }
         }
-
     }
 }
