@@ -353,78 +353,92 @@ namespace APIManagerMedicine.Controllers
 
         [HttpPut]
         [Route("UpdateAccount")]
-        public ActionResult<Response> UpdateAccount(int userID, [FromBody] Account updatedAccount)
+        public ActionResult<Response> UpdateAccount([FromQuery] int userID, [FromBody] Account updatedAccount)
         {
-            SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("ManagerMedicineDB").ToString());
-            Response response = new Response();
-
-            try
+            using (SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("ManagerMedicineDB").ToString()))
             {
-                connection.Open();
+                Response response = new Response();
 
-                // Kiểm tra xem User có tồn tại không
-                SqlCommand checkCmd = new SqlCommand("SELECT COUNT(1) FROM [Account] WHERE UserID = @UserID", connection);
-                checkCmd.Parameters.AddWithValue("@UserID", userID);
-                int userCount = (int)checkCmd.ExecuteScalar();
-
-                if (userCount == 0)
+                try
                 {
-                    response.StatusCode = 404; // Not Found
-                    response.StatusMessage = "User not found";
-                    return response;
+                    connection.Open();
+
+                    // Bước 1: Lấy thông tin avatar hiện tại của tài khoản từ CSDL
+                    SqlDataAdapter da = new SqlDataAdapter("SELECT Avatar FROM Account WHERE UserID = @UserID", connection);
+                    da.SelectCommand.Parameters.AddWithValue("@UserID", userID);
+                    DataTable dt = new DataTable();
+                    da.Fill(dt);
+
+                    if (dt.Rows.Count == 0)
+                    {
+                        return NotFound(new { message = "Account not found" });
+                    }
+
+                    // Lấy tên ảnh avatar cũ
+                    string oldAvatar = Convert.ToString(dt.Rows[0]["Avatar"]);
+
+                    // Bước 2: Kiểm tra nếu ảnh cũ khác ảnh mới và tiến hành xóa
+                    if (!string.IsNullOrEmpty(oldAvatar) && oldAvatar != updatedAccount.Avatar)
+                    {
+                        var oldAvatarPath = Path.Combine("D:", "QLThuoc", "QLThuocApp", "public", "avatarStore", Path.GetFileName(oldAvatar));
+                        if (System.IO.File.Exists(oldAvatarPath))
+                        {
+                            System.IO.File.Delete(oldAvatarPath);
+                        }
+                    }
+
+                    // Bước 3: Cập nhật thông tin tài khoản và avatar mới
+                    string query = "UPDATE Account SET " +
+                                   "UserName = @UserName, Password = @Password, Avatar = @Avatar, UserType = @UserType, " +
+                                   "ActiveStatus = @ActiveStatus, VisibleFunction = @VisibleFunction, StartTime = @StartTime, " +
+                                   "EndTime = @EndTime, WorkDayofWeek = @WorkDayofWeek, ActivationDate = @ActivationDate, " +
+                                   "DeactivationDate = @DeactivationDate, WorkShedule = @WorkShedule, ActiveShedule = @ActiveShedule, " +
+                                   "MaNV = @MaNV, MaCN = @MaCN " +
+                                   "WHERE UserID = @UserID";
+
+                    SqlCommand updateCmd = new SqlCommand(query, connection);
+                    updateCmd.Parameters.AddWithValue("@UserID", userID);
+                    updateCmd.Parameters.AddWithValue("@UserName", updatedAccount.UserName ?? (object)DBNull.Value);
+                    updateCmd.Parameters.AddWithValue("@Password", updatedAccount.Password ?? (object)DBNull.Value);
+                    updateCmd.Parameters.AddWithValue("@Avatar", updatedAccount.Avatar ?? (object)DBNull.Value); // Đường dẫn ảnh mới
+                    updateCmd.Parameters.AddWithValue("@UserType", updatedAccount.UserType ?? (object)DBNull.Value);
+                    updateCmd.Parameters.AddWithValue("@ActiveStatus", updatedAccount.ActiveStatus);
+                    updateCmd.Parameters.AddWithValue("@VisibleFunction", updatedAccount.VisibleFunction ?? (object)DBNull.Value);
+                    updateCmd.Parameters.AddWithValue("@StartTime", updatedAccount.StartTime.HasValue ? (object)updatedAccount.StartTime.Value : DBNull.Value);
+                    updateCmd.Parameters.AddWithValue("@EndTime", updatedAccount.EndTime.HasValue ? (object)updatedAccount.EndTime.Value : DBNull.Value);
+                    updateCmd.Parameters.AddWithValue("@WorkDayofWeek", updatedAccount.WorkDayofWeek ?? (object)DBNull.Value);
+                    updateCmd.Parameters.AddWithValue("@ActivationDate", updatedAccount.ActivationDate);
+                    updateCmd.Parameters.AddWithValue("@DeactivationDate", updatedAccount.DeactivationDate);
+                    updateCmd.Parameters.AddWithValue("@WorkShedule", updatedAccount.WorkShedule);
+                    updateCmd.Parameters.AddWithValue("@ActiveShedule", updatedAccount.ActiveShedule);
+                    updateCmd.Parameters.AddWithValue("@MaNV", updatedAccount.MaNV ?? (object)DBNull.Value);
+                    updateCmd.Parameters.AddWithValue("@MaCN", updatedAccount.MaCN ?? (object)DBNull.Value);
+
+                    int rowsAffected = updateCmd.ExecuteNonQuery();
+
+                    if (rowsAffected > 0)
+                    {
+                        response.StatusCode = 200; // OK
+                        response.StatusMessage = "Account updated successfully";
+                    }
+                    else
+                    {
+                        response.StatusCode = 500; // Internal Server Error
+                        response.StatusMessage = "Failed to update account";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    response.StatusCode = 500;
+                    response.StatusMessage = $"Internal server error: {ex.Message}";
+                }
+                finally
+                {
+                    connection.Close();
                 }
 
-                // Cập nhật thông tin tài khoản
-                SqlCommand updateCmd = new SqlCommand(
-                    "UPDATE [Account] SET " +
-                    "UserName = @UserName, Password = @Password, Avatar = @Avatar, UserType = @UserType, " +
-                    "ActiveStatus = @ActiveStatus, VisibleFunction = @VisibleFunction, StartTime = @StartTime, " +
-                    "EndTime = @EndTime, WorkDayofWeek = @WorkDayofWeek, ActivationDate = @ActivationDate, " +
-                    "DeactivationDate = @DeactivationDate, WorkShedule = @WorkShedule, ActiveShedule = @ActiveShedule, " +
-                    "MaNV = @MaNV, MaCN = @MaCN " +
-                    "WHERE UserID = @UserID", connection);
-
-                updateCmd.Parameters.AddWithValue("@UserID", userID);
-                updateCmd.Parameters.AddWithValue("@UserName", updatedAccount.UserName ?? (object)DBNull.Value);
-                updateCmd.Parameters.AddWithValue("@Password", updatedAccount.Password ?? (object)DBNull.Value);
-                updateCmd.Parameters.AddWithValue("@Avatar", updatedAccount.Avatar ?? (object)DBNull.Value);
-                updateCmd.Parameters.AddWithValue("@UserType", updatedAccount.UserType ?? (object)DBNull.Value);
-                updateCmd.Parameters.AddWithValue("@ActiveStatus", updatedAccount.ActiveStatus);
-                updateCmd.Parameters.AddWithValue("@VisibleFunction", updatedAccount.VisibleFunction ?? (object)DBNull.Value);
-                updateCmd.Parameters.AddWithValue("@StartTime", updatedAccount.StartTime.HasValue ? (object)updatedAccount.StartTime.Value : DBNull.Value);
-                updateCmd.Parameters.AddWithValue("@EndTime", updatedAccount.EndTime.HasValue ? (object)updatedAccount.EndTime.Value : DBNull.Value);
-                updateCmd.Parameters.AddWithValue("@WorkDayofWeek", updatedAccount.WorkDayofWeek ?? (object)DBNull.Value);
-                updateCmd.Parameters.AddWithValue("@ActivationDate", updatedAccount.ActivationDate);
-                updateCmd.Parameters.AddWithValue("@DeactivationDate", updatedAccount.DeactivationDate);
-                updateCmd.Parameters.AddWithValue("@WorkShedule", updatedAccount.WorkShedule);
-                updateCmd.Parameters.AddWithValue("@ActiveShedule", updatedAccount.ActiveShedule);
-                updateCmd.Parameters.AddWithValue("@MaNV", updatedAccount.MaNV ?? (object)DBNull.Value);
-                updateCmd.Parameters.AddWithValue("@MaCN", updatedAccount.MaCN ?? (object)DBNull.Value);
-
-                int rowsAffected = updateCmd.ExecuteNonQuery();
-
-                if (rowsAffected > 0)
-                {
-                    response.StatusCode = 200; // OK
-                    response.StatusMessage = "Account updated successfully";
-                }
-                else
-                {
-                    response.StatusCode = 500; // Internal Server Error
-                    response.StatusMessage = "Failed to update account";
-                }
+                return response;
             }
-            catch (Exception ex)
-            {
-                response.StatusCode = 500;
-                response.StatusMessage = $"Internal server error: {ex.Message}";
-            }
-            finally
-            {
-                connection.Close();
-            }
-
-            return response;
         }
 
         [HttpDelete]
@@ -448,6 +462,27 @@ namespace APIManagerMedicine.Controllers
                     response.StatusCode = 404; // Not Found
                     response.StatusMessage = "User not found";
                     return response;
+                }
+
+                // Bước 2: Lấy thông tin ảnh đại diện của user (nếu có)
+                SqlDataAdapter da = new SqlDataAdapter("SELECT Avatar FROM [Account] WHERE UserID = @UserID", connection);
+                da.SelectCommand.Parameters.AddWithValue("@UserID", userID);
+
+                DataTable dt = new DataTable();
+                da.Fill(dt);
+
+                // Nếu có ảnh đại diện, xóa ảnh
+                if (dt.Rows.Count > 0)
+                {
+                    string avatarPath = Convert.ToString(dt.Rows[0]["Avatar"]);
+                    if (!string.IsNullOrEmpty(avatarPath))
+                    {
+                        var fullImagePath = Path.Combine("D:", "QLThuoc", "QLThuocApp", "public", "avatarStore", Path.GetFileName(avatarPath));
+                        if (System.IO.File.Exists(fullImagePath))
+                        {
+                            System.IO.File.Delete(fullImagePath);
+                        }
+                    }
                 }
 
                 // Thực hiện xóa User
@@ -479,5 +514,43 @@ namespace APIManagerMedicine.Controllers
             return response;
         }
 
+        [HttpPost]
+        [Route("UploadImage")]
+        public async Task<IActionResult> UploadImage(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { message = "File not selected" });
+            }
+
+            try
+            {
+                // Đường dẫn tới thư mục lưu trữ hình ảnh trong thư mục public
+                var folderPath = Path.Combine("D:", "QLThuoc", "QLThuocApp", "public", "avatarStore");
+
+                if (!Directory.Exists(folderPath))
+                {
+                    Directory.CreateDirectory(folderPath);
+                }
+
+                // Tạo tên file duy nhất (để tránh trùng lặp)
+                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+                var filePath = Path.Combine(folderPath, fileName);
+
+                // Lưu file vào thư mục
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                // Trả về đường dẫn của file đã lưu
+                var imageUrl = $"/avatarStore/{fileName}"; // Đường dẫn từ client
+                return Ok(new { imageUrl });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "File upload failed", error = ex.Message });
+            }
+        }
     }
 }
