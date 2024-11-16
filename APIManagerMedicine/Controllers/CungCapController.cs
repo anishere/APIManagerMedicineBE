@@ -61,6 +61,62 @@ namespace APIManagerMedicine.Controllers
             }
         }
 
+        [HttpGet("GetCungCap")]
+        public ActionResult<Response> GetCungCapByKey(string maNV, string maNCC, string maThuoc)
+        {
+            Response response = new Response();
+            SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("ManagerMedicineDB").ToString());
+
+            try
+            {
+                SqlDataAdapter da = new SqlDataAdapter(
+                    @"SELECT * FROM cungcap 
+              WHERE MaNV = @MaNV AND MaNCC = @MaNCC AND MaThuoc = @MaThuoc", connection);
+
+                da.SelectCommand.Parameters.AddWithValue("@MaNV", maNV);
+                da.SelectCommand.Parameters.AddWithValue("@MaNCC", maNCC);
+                da.SelectCommand.Parameters.AddWithValue("@MaThuoc", maThuoc);
+
+                DataTable dt = new DataTable();
+                da.Fill(dt);
+
+                if (dt.Rows.Count > 0)
+                {
+                    CungCap cc = new CungCap
+                    {
+                        MaNV = Convert.ToString(dt.Rows[0]["MaNV"]),
+                        MaNCC = Convert.ToString(dt.Rows[0]["MaNCC"]),
+                        MaThuoc = Convert.ToString(dt.Rows[0]["MaThuoc"]),
+                        NgayCungCap = Convert.ToDateTime(dt.Rows[0]["NgayCungCap"]),
+                        SoLuongThuocNhap = Convert.ToInt32(dt.Rows[0]["SoLuongThuocNhap"]),
+                        MaCN = Convert.ToString(dt.Rows[0]["MaCN"]),
+                        GiaNhap = Convert.ToDecimal(dt.Rows[0]["GiaNhap"])
+                    };
+
+                    response.StatusCode = 200;
+                    response.StatusMessage = "Success";
+                    response.ListCungCap = new List<CungCap> { cc };
+                    return Ok(response);
+                }
+                else
+                {
+                    response.StatusCode = 404;
+                    response.StatusMessage = "No record found.";
+                    return NotFound(response);
+                }
+            }
+            catch (Exception ex)
+            {
+                response.StatusCode = 500;
+                response.StatusMessage = $"Internal server error: {ex.Message}";
+                return StatusCode(500, response);
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
+
         // Thêm cung cấp
         [HttpPost("AddCungCap")]
         public ActionResult<Response> AddCungCap([FromBody] CungCap newCungCap)
@@ -111,7 +167,7 @@ namespace APIManagerMedicine.Controllers
 
         // Cập nhật cung cấp
         [HttpPut("UpdateCungCap")]
-        public ActionResult<Response> UpdateCungCap([FromBody] CungCap updatedCungCap)
+        public ActionResult<Response> UpdateCungCap(string maNV, string maNCC, string maThuoc, [FromBody] CungCap updatedCungCap)
         {
             Response response = new Response();
             SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("ManagerMedicineDB").ToString());
@@ -121,12 +177,12 @@ namespace APIManagerMedicine.Controllers
                 connection.Open();
                 SqlCommand cmd = new SqlCommand(
                     @"UPDATE cungcap 
-                      SET MaNV = @MaNV, MaNCC = @MaNCC, NgayCungCap = @NgayCungCap, SoLuongThuocNhap = @SoLuongThuocNhap, MaCN = @MaCN, GiaNhap = @GiaNhap 
-                      WHERE MaThuoc = @MaThuoc", connection);
+              SET NgayCungCap = @NgayCungCap, SoLuongThuocNhap = @SoLuongThuocNhap, MaCN = @MaCN, GiaNhap = @GiaNhap 
+              WHERE MaNV = @MaNV AND MaNCC = @MaNCC AND MaThuoc = @MaThuoc", connection);
 
-                cmd.Parameters.AddWithValue("@MaNV", updatedCungCap.MaNV ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@MaNCC", updatedCungCap.MaNCC ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@MaThuoc", updatedCungCap.MaThuoc ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@MaNV", maNV);
+                cmd.Parameters.AddWithValue("@MaNCC", maNCC);
+                cmd.Parameters.AddWithValue("@MaThuoc", maThuoc);
                 cmd.Parameters.AddWithValue("@NgayCungCap", updatedCungCap.NgayCungCap);
                 cmd.Parameters.AddWithValue("@SoLuongThuocNhap", updatedCungCap.SoLuongThuocNhap);
                 cmd.Parameters.AddWithValue("@MaCN", updatedCungCap.MaCN ?? (object)DBNull.Value);
@@ -159,8 +215,8 @@ namespace APIManagerMedicine.Controllers
         }
 
         // Xóa cung cấp theo mã thuốc
-        [HttpDelete("DeleteCungCap/{maThuoc}")]
-        public ActionResult<Response> DeleteCungCap(string maThuoc)
+        [HttpDelete("DeleteCungCap")]
+        public ActionResult<Response> DeleteCungCap(string maNV, string maNCC, string maThuoc)
         {
             Response response = new Response();
             SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("ManagerMedicineDB").ToString());
@@ -168,7 +224,12 @@ namespace APIManagerMedicine.Controllers
             try
             {
                 connection.Open();
-                SqlCommand cmd = new SqlCommand("DELETE FROM cungcap WHERE MaThuoc = @MaThuoc", connection);
+                SqlCommand cmd = new SqlCommand(
+                    @"DELETE FROM cungcap 
+              WHERE MaNV = @MaNV AND MaNCC = @MaNCC AND MaThuoc = @MaThuoc", connection);
+
+                cmd.Parameters.AddWithValue("@MaNV", maNV);
+                cmd.Parameters.AddWithValue("@MaNCC", maNCC);
                 cmd.Parameters.AddWithValue("@MaThuoc", maThuoc);
 
                 int rowsAffected = cmd.ExecuteNonQuery();
@@ -196,5 +257,6 @@ namespace APIManagerMedicine.Controllers
                 connection.Close();
             }
         }
+
     }
 }
