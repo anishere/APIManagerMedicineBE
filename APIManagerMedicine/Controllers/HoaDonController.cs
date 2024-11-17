@@ -103,7 +103,6 @@ namespace APIManagerMedicine.Controllers
             }
         }
 
-        // Thêm hóa đơn
         [HttpPost("AddHoaDon")]
         public ActionResult<Response> AddHoaDon([FromBody] HoaDon newHoaDon)
         {
@@ -113,11 +112,18 @@ namespace APIManagerMedicine.Controllers
             try
             {
                 connection.Open();
-                newHoaDon.MaHD = Guid.NewGuid().ToString();
+
+                // Lấy thời gian hiện tại theo định dạng yyyyMMddHHmmss
+                string timePrefix = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+
+                // Tạo GUID mới và kết hợp với thời gian
+                string sequentialGuid = timePrefix + Guid.NewGuid().ToString().Substring(8); // Thêm thời gian vào GUID để đảm bảo tính tuần tự
+
+                newHoaDon.MaHD = sequentialGuid;  // Sử dụng GUID có tính tuần tự
 
                 SqlCommand cmd = new SqlCommand(
                     @"INSERT INTO hoadon (MaHD, MaNV, MaKH, NgayBan, TongGia, MaCN, GiaTruocGiam, GiamGia) 
-                      VALUES (@MaHD, @MaNV, @MaKH, @NgayBan, @TongGia, @MaCN, @GiaTruocGiam, @GiamGia)", connection);
+              VALUES (@MaHD, @MaNV, @MaKH, @NgayBan, @TongGia, @MaCN, @GiaTruocGiam, @GiamGia)", connection);
 
                 cmd.Parameters.AddWithValue("@MaHD", newHoaDon.MaHD);
                 cmd.Parameters.AddWithValue("@MaNV", newHoaDon.MaNV ?? (object)DBNull.Value);
@@ -125,8 +131,8 @@ namespace APIManagerMedicine.Controllers
                 cmd.Parameters.AddWithValue("@NgayBan", newHoaDon.NgayBan ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@TongGia", newHoaDon.TongGia ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@MaCN", newHoaDon.MaCN ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@GiaTruocGiam", newHoaDon.GiaTruocGiam ?? (object)DBNull.Value); // NEW
-                cmd.Parameters.AddWithValue("@GiamGia", newHoaDon.GiamGia);                                    // NEW
+                cmd.Parameters.AddWithValue("@GiaTruocGiam", newHoaDon.GiaTruocGiam ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@GiamGia", newHoaDon.GiamGia);
 
                 int rowsAffected = cmd.ExecuteNonQuery();
                 if (rowsAffected > 0)

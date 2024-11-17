@@ -36,13 +36,14 @@ namespace APIManagerMedicine.Controllers
                 {
                     CungCap cc = new CungCap
                     {
+                        IDCungCap = Convert.ToString(dt.Rows[i]["IDCungCap"]),
                         MaNV = Convert.ToString(dt.Rows[i]["MaNV"]),
                         MaNCC = Convert.ToString(dt.Rows[i]["MaNCC"]),
                         MaThuoc = Convert.ToString(dt.Rows[i]["MaThuoc"]),
-                        NgayCungCap = Convert.ToDateTime(dt.Rows[i]["NgayCungCap"]),
-                        SoLuongThuocNhap = Convert.ToInt32(dt.Rows[i]["SoLuongThuocNhap"]),
+                        NgayCungCap = dt.Rows[i]["NgayCungCap"] != DBNull.Value ? Convert.ToDateTime(dt.Rows[i]["NgayCungCap"]) : null,
+                        SoLuongThuocNhap = dt.Rows[i]["SoLuongThuocNhap"] != DBNull.Value ? Convert.ToInt32(dt.Rows[i]["SoLuongThuocNhap"]) : null,
                         MaCN = Convert.ToString(dt.Rows[i]["MaCN"]),
-                        GiaNhap = Convert.ToDecimal(dt.Rows[i]["GiaNhap"])
+                        GiaNhap = dt.Rows[i]["GiaNhap"] != DBNull.Value ? Convert.ToDecimal(dt.Rows[i]["GiaNhap"]) : null
                     };
                     lstCungCap.Add(cc);
                 }
@@ -61,21 +62,17 @@ namespace APIManagerMedicine.Controllers
             }
         }
 
+        // Lấy cung cấp theo khóa chính
         [HttpGet("GetCungCap")]
-        public ActionResult<Response> GetCungCapByKey(string maNV, string maNCC, string maThuoc)
+        public ActionResult<Response> GetCungCapById(string idCungCap)
         {
             Response response = new Response();
             SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("ManagerMedicineDB").ToString());
 
             try
             {
-                SqlDataAdapter da = new SqlDataAdapter(
-                    @"SELECT * FROM cungcap 
-              WHERE MaNV = @MaNV AND MaNCC = @MaNCC AND MaThuoc = @MaThuoc", connection);
-
-                da.SelectCommand.Parameters.AddWithValue("@MaNV", maNV);
-                da.SelectCommand.Parameters.AddWithValue("@MaNCC", maNCC);
-                da.SelectCommand.Parameters.AddWithValue("@MaThuoc", maThuoc);
+                SqlDataAdapter da = new SqlDataAdapter("SELECT * FROM cungcap WHERE IDCungCap = @IDCungCap", connection);
+                da.SelectCommand.Parameters.AddWithValue("@IDCungCap", idCungCap);
 
                 DataTable dt = new DataTable();
                 da.Fill(dt);
@@ -84,13 +81,14 @@ namespace APIManagerMedicine.Controllers
                 {
                     CungCap cc = new CungCap
                     {
+                        IDCungCap = Convert.ToString(dt.Rows[0]["IDCungCap"]),
                         MaNV = Convert.ToString(dt.Rows[0]["MaNV"]),
                         MaNCC = Convert.ToString(dt.Rows[0]["MaNCC"]),
                         MaThuoc = Convert.ToString(dt.Rows[0]["MaThuoc"]),
-                        NgayCungCap = Convert.ToDateTime(dt.Rows[0]["NgayCungCap"]),
-                        SoLuongThuocNhap = Convert.ToInt32(dt.Rows[0]["SoLuongThuocNhap"]),
+                        NgayCungCap = dt.Rows[0]["NgayCungCap"] != DBNull.Value ? Convert.ToDateTime(dt.Rows[0]["NgayCungCap"]) : null,
+                        SoLuongThuocNhap = dt.Rows[0]["SoLuongThuocNhap"] != DBNull.Value ? Convert.ToInt32(dt.Rows[0]["SoLuongThuocNhap"]) : null,
                         MaCN = Convert.ToString(dt.Rows[0]["MaCN"]),
-                        GiaNhap = Convert.ToDecimal(dt.Rows[0]["GiaNhap"])
+                        GiaNhap = dt.Rows[0]["GiaNhap"] != DBNull.Value ? Convert.ToDecimal(dt.Rows[0]["GiaNhap"]) : null
                     };
 
                     response.StatusCode = 200;
@@ -127,24 +125,29 @@ namespace APIManagerMedicine.Controllers
             try
             {
                 connection.Open();
-                SqlCommand cmd = new SqlCommand(
-                    @"INSERT INTO cungcap (MaNV, MaNCC, MaThuoc, NgayCungCap, SoLuongThuocNhap, MaCN, GiaNhap) 
-                      VALUES (@MaNV, @MaNCC, @MaThuoc, @NgayCungCap, @SoLuongThuocNhap, @MaCN, @GiaNhap)", connection);
 
+                // Tạo mã IDCungCap ngẫu nhiên
+                string idCungCap = Guid.NewGuid().ToString();
+
+                SqlCommand cmd = new SqlCommand(
+                    @"INSERT INTO cungcap (IDCungCap, MaNV, MaNCC, MaThuoc, NgayCungCap, SoLuongThuocNhap, MaCN, GiaNhap) 
+                      VALUES (@IDCungCap, @MaNV, @MaNCC, @MaThuoc, @NgayCungCap, @SoLuongThuocNhap, @MaCN, @GiaNhap)", connection);
+
+                cmd.Parameters.AddWithValue("@IDCungCap", idCungCap);
                 cmd.Parameters.AddWithValue("@MaNV", newCungCap.MaNV ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@MaNCC", newCungCap.MaNCC ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@MaThuoc", newCungCap.MaThuoc ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@NgayCungCap", newCungCap.NgayCungCap);
-                cmd.Parameters.AddWithValue("@SoLuongThuocNhap", newCungCap.SoLuongThuocNhap);
+                cmd.Parameters.AddWithValue("@NgayCungCap", newCungCap.NgayCungCap ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@SoLuongThuocNhap", newCungCap.SoLuongThuocNhap ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@MaCN", newCungCap.MaCN ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@GiaNhap", newCungCap.GiaNhap);
+                cmd.Parameters.AddWithValue("@GiaNhap", newCungCap.GiaNhap ?? (object)DBNull.Value);
 
                 int rowsAffected = cmd.ExecuteNonQuery();
                 if (rowsAffected > 0)
                 {
                     response.StatusCode = 201;
                     response.StatusMessage = "Record added successfully.";
-                    return CreatedAtAction(nameof(GetAllCungCap), response);
+                    return CreatedAtAction(nameof(GetCungCapById), new { idCungCap }, response);
                 }
                 else
                 {
@@ -167,7 +170,7 @@ namespace APIManagerMedicine.Controllers
 
         // Cập nhật cung cấp
         [HttpPut("UpdateCungCap")]
-        public ActionResult<Response> UpdateCungCap(string maNV, string maNCC, string maThuoc, [FromBody] CungCap updatedCungCap)
+        public ActionResult<Response> UpdateCungCap(string idCungCap, [FromBody] CungCap updatedCungCap)
         {
             Response response = new Response();
             SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("ManagerMedicineDB").ToString());
@@ -177,16 +180,14 @@ namespace APIManagerMedicine.Controllers
                 connection.Open();
                 SqlCommand cmd = new SqlCommand(
                     @"UPDATE cungcap 
-              SET NgayCungCap = @NgayCungCap, SoLuongThuocNhap = @SoLuongThuocNhap, MaCN = @MaCN, GiaNhap = @GiaNhap 
-              WHERE MaNV = @MaNV AND MaNCC = @MaNCC AND MaThuoc = @MaThuoc", connection);
+                      SET NgayCungCap = @NgayCungCap, SoLuongThuocNhap = @SoLuongThuocNhap, MaCN = @MaCN, GiaNhap = @GiaNhap 
+                      WHERE IDCungCap = @IDCungCap", connection);
 
-                cmd.Parameters.AddWithValue("@MaNV", maNV);
-                cmd.Parameters.AddWithValue("@MaNCC", maNCC);
-                cmd.Parameters.AddWithValue("@MaThuoc", maThuoc);
-                cmd.Parameters.AddWithValue("@NgayCungCap", updatedCungCap.NgayCungCap);
-                cmd.Parameters.AddWithValue("@SoLuongThuocNhap", updatedCungCap.SoLuongThuocNhap);
+                cmd.Parameters.AddWithValue("@IDCungCap", idCungCap);
+                cmd.Parameters.AddWithValue("@NgayCungCap", updatedCungCap.NgayCungCap ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@SoLuongThuocNhap", updatedCungCap.SoLuongThuocNhap ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@MaCN", updatedCungCap.MaCN ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@GiaNhap", updatedCungCap.GiaNhap);
+                cmd.Parameters.AddWithValue("@GiaNhap", updatedCungCap.GiaNhap ?? (object)DBNull.Value);
 
                 int rowsAffected = cmd.ExecuteNonQuery();
                 if (rowsAffected > 0)
@@ -214,9 +215,9 @@ namespace APIManagerMedicine.Controllers
             }
         }
 
-        // Xóa cung cấp theo mã thuốc
+        // Xóa cung cấp
         [HttpDelete("DeleteCungCap")]
-        public ActionResult<Response> DeleteCungCap(string maNV, string maNCC, string maThuoc)
+        public ActionResult<Response> DeleteCungCap(string idCungCap)
         {
             Response response = new Response();
             SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("ManagerMedicineDB").ToString());
@@ -226,11 +227,9 @@ namespace APIManagerMedicine.Controllers
                 connection.Open();
                 SqlCommand cmd = new SqlCommand(
                     @"DELETE FROM cungcap 
-              WHERE MaNV = @MaNV AND MaNCC = @MaNCC AND MaThuoc = @MaThuoc", connection);
+                      WHERE IDCungCap = @IDCungCap", connection);
 
-                cmd.Parameters.AddWithValue("@MaNV", maNV);
-                cmd.Parameters.AddWithValue("@MaNCC", maNCC);
-                cmd.Parameters.AddWithValue("@MaThuoc", maThuoc);
+                cmd.Parameters.AddWithValue("@IDCungCap", idCungCap);
 
                 int rowsAffected = cmd.ExecuteNonQuery();
                 if (rowsAffected > 0)
@@ -257,6 +256,5 @@ namespace APIManagerMedicine.Controllers
                 connection.Close();
             }
         }
-
     }
 }
