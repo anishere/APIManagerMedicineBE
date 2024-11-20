@@ -27,6 +27,7 @@ namespace APIManagerMedicine.Model
 
         public List<CungCap> ListCungCap { get; set; }
 
+        public List<NotePersonal> ListNotePersonal { get; set; }
         // Các thuộc tính cho thống kê doanh thu
         public decimal TotalRevenue { get; set; }
         public decimal BranchRevenue { get; set; }
