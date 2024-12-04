@@ -380,7 +380,7 @@ namespace APIManagerMedicine.Controllers
                     // Bước 2: Kiểm tra nếu ảnh cũ khác ảnh mới và tiến hành xóa
                     if (!string.IsNullOrEmpty(oldAvatar) && oldAvatar != updatedAccount.Avatar)
                     {
-                        var oldAvatarPath = Path.Combine("D:", "QLThuoc", "QLThuocApp", "public", "avatarStore", Path.GetFileName(oldAvatar));
+                        var oldAvatarPath = Path.Combine("D:", "QLThuocSetup", "QLThuoc", "QLThuocApp", "public", "avatarStore", Path.GetFileName(oldAvatar));
                         if (System.IO.File.Exists(oldAvatarPath))
                         {
                             System.IO.File.Delete(oldAvatarPath);
@@ -477,7 +477,7 @@ namespace APIManagerMedicine.Controllers
                     string avatarPath = Convert.ToString(dt.Rows[0]["Avatar"]);
                     if (!string.IsNullOrEmpty(avatarPath))
                     {
-                        var fullImagePath = Path.Combine("D:", "QLThuoc", "QLThuocApp", "public", "avatarStore", Path.GetFileName(avatarPath));
+                        var fullImagePath = Path.Combine("D:", "QLThuocSetup", "QLThuoc", "QLThuocApp", "public", "avatarStore", Path.GetFileName(avatarPath));
                         if (System.IO.File.Exists(fullImagePath))
                         {
                             System.IO.File.Delete(fullImagePath);
@@ -526,7 +526,8 @@ namespace APIManagerMedicine.Controllers
             try
             {
                 // Đường dẫn tới thư mục lưu trữ hình ảnh trong thư mục public
-                var folderPath = Path.Combine("D:", "QLThuoc", "QLThuocApp", "public", "avatarStore");
+                // "D:", "QLThuoc", "QLThuocApp", "public", "avatarStore"
+                var folderPath = Path.Combine("D:", "QLThuocSetup", "QLThuoc", "QLThuocApp", "public", "avatarStore");
 
                 if (!Directory.Exists(folderPath))
                 {

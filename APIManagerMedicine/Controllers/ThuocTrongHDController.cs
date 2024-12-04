@@ -60,6 +60,47 @@ namespace APIManagerMedicine.Controllers
             }
         }
 
+        // Lấy danh sách tất cả ThuocTrongHD
+        [HttpGet("ListThuocTrongHD")]
+        public ActionResult<Response> GetAllThuocTrongHD()
+        {
+            Response response = new Response();
+            List<ThuocTrongHD> lstThuocTrongHD = new List<ThuocTrongHD>();
+            SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("ManagerMedicineDB").ToString());
+
+            // Truy vấn tất cả bản ghi trong bảng thuoc_trong_hoa_don mà không dựa vào MaHD
+            SqlDataAdapter da = new SqlDataAdapter("SELECT * FROM thuoc_trong_hoa_don", connection);
+
+            DataTable dt = new DataTable();
+            da.Fill(dt);
+
+            if (dt.Rows.Count > 0)
+            {
+                for (int i = 0; i < dt.Rows.Count; i++)
+                {
+                    ThuocTrongHD tthd = new ThuocTrongHD
+                    {
+                        MaHD = Convert.ToString(dt.Rows[i]["MaHD"]),
+                        MaThuoc = Convert.ToString(dt.Rows[i]["MaThuoc"]),
+                        SoLuongBan = Convert.ToInt32(dt.Rows[i]["SoLuongBan"]),
+                        MaCN = Convert.ToString(dt.Rows[i]["MaCN"])
+                    };
+                    lstThuocTrongHD.Add(tthd);
+                }
+
+                response.StatusCode = 200;
+                response.StatusMessage = "Lấy dữ liệu thành công!";
+                response.ListThuocTrongHD = lstThuocTrongHD;
+            }
+            else
+            {
+                response.StatusCode = 404;
+                response.StatusMessage = "Không có dữ liệu!";
+            }
+
+            return Ok(response);
+        }
+
         // Thêm ThuocTrongHD theo MaHD và MaThuoc
         [HttpPost("AddThuocTrongHD")]
         public ActionResult<Response> AddThuocTrongHD([FromBody] ThuocTrongHD newThuocTrongHD)

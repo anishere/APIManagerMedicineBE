@@ -176,7 +176,7 @@ namespace APIManagerMedicine.Controllers
             try
             {
                 // Đường dẫn tới thư mục lưu trữ hình ảnh trong thư mục public
-                var folderPath = Path.Combine("D:", "QLThuoc", "QLThuocApp", "public", "imgStore");
+                var folderPath = Path.Combine("D:", "QLThuocSetup", "QLThuoc", "QLThuocApp", "public", "imgStore");
 
                 if (!Directory.Exists(folderPath))
                 {
@@ -226,7 +226,7 @@ namespace APIManagerMedicine.Controllers
                 // Bước 2: Kiểm tra nếu ảnh cũ khác ảnh mới và tiến hành xóa
                 if (!string.IsNullOrEmpty(oldImage) && oldImage != medicine.HinhAnh)
                 {
-                    var oldImagePath = Path.Combine("D:", "QLThuoc", "QLThuocApp", "public", "imgStore", Path.GetFileName(oldImage));
+                    var oldImagePath = Path.Combine("D:", "QLThuocSetup", "QLThuoc", "QLThuocApp", "public", "imgStore", Path.GetFileName(oldImage));
                     if (System.IO.File.Exists(oldImagePath))
                     {
                         System.IO.File.Delete(oldImagePath);
@@ -295,7 +295,7 @@ namespace APIManagerMedicine.Controllers
                 string imagePath = Convert.ToString(dt.Rows[0]["HinhAnh"]);
                 if (!string.IsNullOrEmpty(imagePath))
                 {
-                    var fullImagePath = Path.Combine("D:", "QLThuoc", "QLThuocApp", "public", "imgStore", Path.GetFileName(imagePath));
+                    var fullImagePath = Path.Combine("D:", "QLThuocSetup", "QLThuoc", "QLThuocApp", "public", "imgStore", Path.GetFileName(imagePath));
                     if (System.IO.File.Exists(fullImagePath))
                     {
                         System.IO.File.Delete(fullImagePath);
